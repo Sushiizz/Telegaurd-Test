@@ -33,7 +33,8 @@ DATA_PATH = _path_from_env(
 
 # Comma-separated list of allowed frontend origins for CORS
 CORS_ORIGINS = os.environ.get(
-    "TELEGUARD_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    "TELEGUARD_CORS_ORIGINS", 
+    "http://localhost:5173,http://127.0.0.1:5173,https://telegaurd-frontend.vercel.app"
 ).split(",")
 
 DEFAULT_PAGE_SIZE = 25
