@@ -1,0 +1,7 @@
+{
+  "trained_rows": 5634,
+  "test_auc": 0.8414089746570563,
+  "test_brier_calibrated": 0.1375797837972641,
+  "churn_base_rate": 0.2653698707936959,
+  "sklearn_contract_version": "1.0"
+}
