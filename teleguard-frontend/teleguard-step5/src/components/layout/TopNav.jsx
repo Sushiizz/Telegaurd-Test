@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Radio } from "lucide-react";
+import { Moon, Radio, Sun } from "lucide-react";
 import { formatTimestamp } from "../../utils/format.js";
 
 /**
@@ -20,25 +20,12 @@ function fleetHealthCopy(overview) {
   };
 }
 
-export default function TopNav({ overview }) {
+export default function TopNav({ overview, activeView, theme, onToggleTheme }) {
   const health = fleetHealthCopy(overview);
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-5">
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo">
-          <span className="font-display text-sm font-semibold text-white">T</span>
-        </div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-display text-[15px] font-semibold tracking-tight text-text-primary">
-            TeleGuard
-          </span>
-          <span className="font-display text-[15px] font-semibold tracking-tight text-indigo">
-            AI
-          </span>
-        </div>
-      </div>
-
+    <header data-tour="status" className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-surface/90 px-5 backdrop-blur sm:px-7">
+      <div className="flex items-center gap-2 text-xs font-medium text-text-secondary"><span className="hidden sm:inline">Workspace</span><span className="text-text-tertiary">/</span><span className="text-text-primary">{activeView === "Ari Agent" ? "Ari Agent" : activeView}</span></div>
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
@@ -58,10 +45,19 @@ export default function TopNav({ overview }) {
           <span className={`text-sm font-medium ${health.tone}`}>{health.label}</span>
         </div>
 
-        <div className="hidden items-center gap-1.5 text-xs text-text-tertiary sm:flex">
+        <div className="hidden items-center gap-1.5 text-xs text-text-tertiary md:flex">
           <Radio size={13} strokeWidth={2} />
           <span>Live · synced {formatTimestamp()}</span>
         </div>
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          className="theme-toggle flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text-secondary transition-colors hover:border-indigo hover:text-indigo"
+        >
+          {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
       </div>
     </header>
   );

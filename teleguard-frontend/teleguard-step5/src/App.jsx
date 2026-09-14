@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppShell from "./components/layout/AppShell.jsx";
 import RetentionTable from "./components/dashboard/RetentionTable.jsx";
 import Customer360Panel from "./components/customer360/Customer360Panel.jsx";
@@ -19,13 +19,28 @@ export default function App() {
   } = useCustomers();
 
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem("teleguard-theme") || "light");
+  const [tourOpen, setTourOpen] = useState(() => localStorage.getItem("teleguard-tour-seen") !== "true");
+  const [agentOpen, setAgentOpen] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("teleguard-theme", theme);
+  }, [theme]);
 
   // { text, requestId } — requestId always changes so the drawer's effect
   // fires even if the same customer's text is requested twice in a row.
   const [agentPrefill, setAgentPrefill] = useState(null);
-  const askAgent = (text) => setAgentPrefill({ text, requestId: Date.now() });
+  const askAgent = (text) => {
+    setAgentPrefill({ text, requestId: Date.now() });
+    setAgentOpen(true);
+  };
 
   const showMockBanner = overviewIsMock || customersIsMock;
+  const closeTour = () => {
+    localStorage.setItem("teleguard-tour-seen", "true");
+    setTourOpen(false);
+  };
 
   return (
     <>
@@ -37,6 +52,13 @@ export default function App() {
       <AppShell
         overview={overview}
         overviewLoading={overviewLoading}
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+        onStartTour={() => setTourOpen(true)}
+        onOpenAgent={() => setAgentOpen(true)}
+        onCloseAgent={() => setAgentOpen(false)}
+        tourOpen={tourOpen}
+        onCloseTour={closeTour}
         leftPanel={
           <RetentionTable
             result={result}
@@ -50,7 +72,7 @@ export default function App() {
           />
         }
         rightPanel={<Customer360Panel customerId={selectedCustomerId} onAskAgent={askAgent} />}
-        agentDrawer={<AgentDrawer prefillQuery={agentPrefill} />}
+        agentDrawer={<AgentDrawer prefillQuery={agentPrefill} open={agentOpen} onOpenChange={setAgentOpen} />}
       />
     </>
   );
