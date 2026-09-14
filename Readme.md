@@ -9,8 +9,33 @@ The product flow is:
 **IF** the offer is applied, is it worth it -> **HOW** should we communicate it?
 
 This repository contains both the FastAPI/ML backend and the React dashboard.
-It is a demo and hackathon-grade implementation: the supplied Telco CSV acts
-as both the training roster and the in-memory customer store.
+It is a local-demo and hackathon-grade implementation: the supplied IBM Telco
+CSV acts as both the training roster and the in-memory customer store. The
+backend scores the full roster during startup; it does not connect to a live
+CRM, billing system, or customer database.
+
+## System Architecture
+
+```text
+IBM Telco CSV
+  |
+  +--> data_prep.py --> train_model.py --> model.pkl + model_metrics.json
+  |                                      (XGBoost + isotonic calibration + SHAP)
+  |
+  +--> FastAPI startup --> scoring.py --> CustomerStore (in memory)
+                 |             |
+                 |             +--> overview and customer list
+                 |             +--> Customer 360 + SHAP drivers
+                 |             +--> roi_engine.py (lazy Next Best Action)
+                 |             +--> orchestrator.py (optional Gemini agent)
+                 |
+                 +--> React/Vite dashboard
+```
+
+The core retention workflow is deterministic: `scoring.py` calculates churn
+risk, CLTV, and ROS; `roi_engine.py` recalculates hypothetical offers and
+selects the highest-value action. Gemini is optional and is used only to
+interpret questions, call the deterministic tools, and draft communication.
 
 ## Features
 
@@ -131,9 +156,9 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The client defaults to `http://localhost:8000`
-for API calls, so no frontend environment file is required for the default
-local setup.
+Open `http://localhost:5173`. The dashboard client defaults to the deployed
+backend at `https://telegaurd-backend.onrender.com`. For local end-to-end
+development, configure the frontend as shown below so it calls your local API.
 
 ## Configuration
 
@@ -148,10 +173,11 @@ relative to that directory.
 | `GEMINI_API_KEY` | unset | Required only for `/api/agent/query` |
 | `TELEGUARD_AGENT_MODEL` | `gemini-3.6-flash` | Gemini model name |
 
-For a non-default frontend API URL, create `teleguard-frontend/teleguard-step5/.env.local`:
+The frontend reads `VITE_API_URL` from
+`teleguard-frontend/teleguard-step5/.env.local`. For the local backend, use:
 
 ```dotenv
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000
 ```
 
 Do not commit API keys or local `.env` files.
@@ -194,6 +220,11 @@ Example:
 ```text
 GET /api/customers?risk_level=HIGH&sort_by=cltv&sort_dir=desc&page=1&page_size=25
 ```
+
+The Gemini agent can apply additional internal filters such as
+`internet_service`, `min_churn_probability`, and `min_ros` through its
+deterministic tool layer; those are not query parameters exposed by this REST
+route.
 
 ### `GET /api/customer/{customer_id}`
 
@@ -316,8 +347,10 @@ The Vite/React dashboard is composed around these flows:
 - **Retention Agent:** ask fleet or customer questions and inspect tool calls.
 
 When `/api/overview` or `/api/customers` is unavailable, the dashboard shows
-sample data and an API-unavailable banner. Customer 360, simulation, and agent
-requests show an error instead of fabricating interactive results.
+bundled sample data and an API-unavailable banner. Customer 360, simulation,
+and agent requests show an error instead of fabricating interactive results.
+This means the overview and table can be explored without the backend, but
+model-derived details and actions require a running API.
 
 ## Development Checks
 
@@ -350,7 +383,7 @@ bundle. The bundle must contain `model`, `calibrator`, `explainer`,
 **Frontend shows sample data**
 
 Confirm the API is running on port 8000, open `/health`, and verify
-`VITE_API_BASE_URL` points to the API. Also check that the backend CORS list
+`VITE_API_URL` points to the API. Also check that the backend CORS list
 contains the Vite origin.
 
 **Agent returns 503**
